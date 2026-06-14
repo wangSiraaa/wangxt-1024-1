@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>跨境电商尺码退换管理系统</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="app-header">
+        <h1>🌍 跨境电商尺码退换管理系统</h1>
+        <div class="time-display">
+            <span id="currentTime"></span>
+        </div>
+    </header>
+
+    <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="cs">客服受理</button>
+        <button class="tab-btn" data-tab="buyer">买家反馈</button>
+        <button class="tab-btn" data-tab="warehouse">仓库入库</button>
+        <button class="tab-btn" data-tab="refund">退款试算</button>
+        <button class="tab-btn" data-tab="arbitration">争议仲裁</button>
+        <button class="tab-btn" data-tab="analysis">原因分析</button>
+    </nav>
+
+    <main class="app-main">
+        <!-- 客服受理模块 -->
+        <section id="tab-cs" class="tab-content active">
+            <div class="module-container">
+                <h2>客服受理中心</h2>
+                <div class="sub-tabs">
+                    <button class="sub-tab-btn active" data-subtab="cs-order">订单录入</button>
+                    <button class="sub-tab-btn" data-subtab="cs-sku">SKU尺码库存</button>
+                    <button class="sub-tab-btn" data-subtab="cs-return">退换申请</button>
+                    <button class="sub-tab-btn" data-subtab="cs-list">申请列表</button>
+                </div>
+
+                <div id="subtab-cs-order" class="sub-tab-content active">
+                    <div class="form-card">
+                        <h3>跨境订单录入</h3>
+                        <form id="orderForm">
+                            <div class="form-grid">
+                                <div class="form-item">
+                                    <label>订单号 *</label>
+                                    <input type="text" id="orderId" placeholder="如：CB202606010001" required>
+                                </div>
+                                <div class="form-item">
+                                    <label>买家账号</label>
+                                    <input type="text" id="buyerAccount" placeholder="buyer@example.com">
+                                </div>
+                                <div class="form-item">
+                                    <label>目的国家/地区 *</label>
+                                    <select id="country" required>
+                                        <option value="">请选择</option>
+                                        <option value="US">美国 (UTC-5)</option>
+                                        <option value="UK">英国 (UTC+0)</option>
+                                        <option value="DE">德国 (UTC+1)</option>
+                                        <option value="FR">法国 (UTC+1)</option>
+                                        <option value="JP">日本 (UTC+9)</option>
+                                        <option value="AU">澳大利亚 (UTC+10)</option>
+                                        <option value="CA">加拿大 (UTC-5)</option>
+                                        <option value="SG">新加坡 (UTC+8)</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>下单时间 *</label>
+                                    <input type="datetime-local" id="orderTime" required>
+                                </div>
+                                <div class="form-item">
+                                    <label>签收时间</label>
+                                    <input type="datetime-local" id="receiveTime">
+                                </div>
+                                <div class="form-item">
+                                    <label>售后期限(天) *</label>
+                                    <input type="number" id="returnDeadline" value="30" min="1" required>
+                                </div>
+                                <div class="form-item">
+                                    <label>订单金额(USD)</label>
+                                    <input type="number" id="orderAmount" step="0.01" min="0">
+                                </div>
+                                <div class="form-item">
+                                    <label>运费(USD)</label>
+                                    <input type="number" id="shippingFee" step="0.01" min="0" value="0">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">保存订单</button>
+                        </form>
+                    </div>
+
+                    <div class="data-card">
+                        <h3>订单列表</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>订单号</th>
+                                    <th>买家</th>
+                                    <th>国家</th>
+                                    <th>下单时间</th>
+                                    <th>签收时间</th>
+                                    <th>售后期限</th>
+                                    <th>剩余天数</th>
+                                    <th>金额</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orderList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="subtab-cs-sku" class="sub-tab-content">
+                    <div class="form-card">
+                        <h3>SKU尺码库存管理</h3>
+                        <form id="skuForm">
+                            <div class="form-grid">
+                                <div class="form-item">
+                                    <label>SKU编码 *</label>
+                                    <input type="text" id="skuCode" placeholder="如：SHIRT-XL-BLK" required>
+                                </div>
+                                <div class="form-item">
+                                    <label>商品名称</label>
+                                    <input type="text" id="skuName" placeholder="如：男士休闲衬衫">
+                                </div>
+                                <div class="form-item">
+                                    <label>尺码 *</label>
+                                    <select id="skuSize" required>
+                                        <option value="">请选择</option>
+                                        <option value="XS">XS</option>
+                                        <option value="S">S</option>
+                                        <option value="M">M</option>
+                                        <option value="L">L</option>
+                                        <option value="XL">XL</option>
+                                        <option value="XXL">XXL</option>
+                                        <option value="36">36 (鞋码)</option>
+                                        <option value="37">37 (鞋码)</option>
+                                        <option value="38">38 (鞋码)</option>
+                                        <option value="39">39 (鞋码)</option>
+                                        <option value="40">40 (鞋码)</option>
+                                        <option value="41">41 (鞋码)</option>
+                                        <option value="42">42 (鞋码)</option>
+                                        <option value="43">43 (鞋码)</option>
+                                        <option value="44">44 (鞋码)</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>颜色</label>
+                                    <input type="text" id="skuColor" placeholder="如：黑色">
+                                </div>
+                                <div class="form-item">
+                                    <label>当前库存 *</label>
+                                    <input type="number" id="skuStock" min="0" value="0" required>
+                                </div>
+                                <div class="form-item">
+                                    <label>安全库存</label>
+                                    <input type="number" id="skuSafeStock" min="0" value="5">
+                                </div>
+                                <div class="form-item">
+                                    <label>单价(USD)</label>
+                                    <input type="number" id="skuPrice" step="0.01" min="0">
+                                </div>
+                                <div class="form-item">
+                                    <label>重量(g)</label>
+                                    <input type="number" id="skuWeight" min="0">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">保存SKU</button>
+                        </form>
+                    </div>
+
+                    <div class="data-card">
+                        <h3>SKU库存列表</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>SKU编码</th>
+                                    <th>商品名称</th>
+                                    <th>尺码</th>
+                                    <th>颜色</th>
+                                    <th>当前库存</th>
+                                    <th>安全库存</th>
+                                    <th>单价</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody id="skuList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="subtab-cs-return" class="sub-tab-content">
+                    <div class="form-card">
+                        <h3>退换申请录入</h3>
+                        <form id="returnForm">
+                            <div class="form-grid">
+                                <div class="form-item">
+                                    <label>关联订单 *</label>
+                                    <select id="returnOrderId" required>
+                                        <option value="">请选择订单</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>申请SKU *</label>
+                                    <select id="returnSkuCode" required>
+                                        <option value="">请选择SKU</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>退换类型 *</label>
+                                    <select id="returnType" required>
+                                        <option value="">请选择</option>
+                                        <option value="exchange">换货</option>
+                                        <option value="refund">退款</option>
+                                        <option value="refund_only">仅退款(不退货)</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>申请数量 *</label>
+                                    <input type="number" id="returnQty" min="1" value="1" required>
+                                </div>
+                                <div class="form-item">
+                                    <label>申请原因(中文) *</label>
+                                    <select id="returnReason" required>
+                                        <option value="">请选择</option>
+                                        <option value="size_big">尺码偏大</option>
+                                        <option value="size_small">尺码偏小</option>
+                                        <option value="size_mismatch">尺码不符</option>
+                                        <option value="quality">质量问题</option>
+                                        <option value="wrong_item">发错商品</option>
+                                        <option value="damaged">运输损坏</option>
+                                        <option value="not_as_described">与描述不符</option>
+                                        <option value="no_longer_needed">不再需要</option>
+                                        <option value="other">其他</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>换货目标尺码</label>
+                                    <select id="exchangeSize">
+                                        <option value="">不换货则不选</option>
+                                        <option value="XS">XS</option>
+                                        <option value="S">S</option>
+                                        <option value="M">M</option>
+                                        <option value="L">L</option>
+                                        <option value="XL">XL</option>
+                                        <option value="XXL">XXL</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>恶意退换标记</label>
+                                    <select id="maliciousFlag">
+                                        <option value="normal">正常</option>
+                                        <option value="suspected">疑似恶意</option>
+                                        <option value="malicious">确认恶意</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>申请时间</label>
+                                    <input type="datetime-local" id="applyTime">
+                                </div>
+                            </div>
+                            <div class="form-item full-width">
+                                <label>备注说明</label>
+                                <textarea id="returnRemark" rows="2" placeholder="客服备注..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">提交退换申请</button>
+                            <span class="hint-text">提交前将自动校验售后期限</span>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="subtab-cs-list" class="sub-tab-content">
+                    <div class="data-card">
+                        <h3>退换申请列表</h3>
+                        <div class="filter-bar">
+                            <select id="filterStatus">
+                                <option value="">全部状态</option>
+                                <option value="pending">待买家反馈</option>
+                                <option value="buyer_submitted">买家已提交</option>
+                                <option value="warehouse_pending">待仓库入库</option>
+                                <option value="warehouse_in">已入库</option>
+                                <option value="qc_pending">待质检</option>
+                                <option value="qc_pass">质检通过</option>
+                                <option value="qc_reject">质检不通过</option>
+                                <option value="exchange_locked">换货已锁库</option>
+                                <option value="refund_pending">待退款</option>
+                                <option value="refunded">已退款</option>
+                                <option value="arbitration">争议仲裁中</option>
+                                <option value="completed">已完成</option>
+                                <option value="rejected">已驳回</option>
+                                <option value="returned">已退回</option>
+                            </select>
+                            <input type="text" id="filterKeyword" placeholder="搜索订单号/SKU...">
+                            <button class="btn btn-default" onclick="renderReturnList()">筛选</button>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>申请编号</th>
+                                    <th>订单号</th>
+                                    <th>SKU</th>
+                                    <th>类型</th>
+                                    <th>原因</th>
+                                    <th>数量</th>
+                                    <th>恶意标记</th>
+                                    <th>状态</th>
+                                    <th>截止时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="returnList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 买家反馈模块 -->
+        <section id="tab-buyer" class="tab-content">
+            <div class="module-container">
+                <h2>买家反馈中心</h2>
+                <div class="sub-tabs">
+                    <button class="sub-tab-btn active" data-subtab="buyer-feedback">试穿反馈</button>
+                    <button class="sub-tab-btn" data-subtab="buyer-reason">多语言原因</button>
+                    <button class="sub-tab-btn" data-subtab="buyer-logistics">物流轨迹</button>
+                    <button class="sub-tab-btn" data-subtab="buyer-pending">待反馈列表</button>
+                </div>
+
+                <div id="subtab-buyer-feedback" class="sub-tab-content active">
+                    <div class="form-card">
+                        <h3>试穿反馈录入</h3>
+                        <form id="feedbackForm">
+                            <div class="form-grid">
+                                <div class="form-item">
+                                    <label>退换申请 *</label>
+                                    <select id="feedbackReturnId" required>
+                                        <option value="">请选择申请</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>试穿时长</label>
+                                    <select id="tryOnDuration">
+                                        <option value="">请选择</option>
+                                        <option value="none">未试穿</option>
+                                        <option value="less_than_5min">少于5分钟</option>
+                                        <option value="5_15min">5-15分钟</option>
+                                        <option value="15_60min">15-60分钟</option>
+                                        <option value="more_than_1h">超过1小时</option>
+                                        <option value="worn_outside">已外穿</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>是否有污渍/磨损</label>
+                                    <select id="hasDamage">
+                                        <option value="no">否</option>
+                                        <option value="yes">是</option>
+                                        <option value="unknown">不确定</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>吊牌是否保留</label>
+                                    <select id="tagKept">
+                                        <option value="yes">是，完整</option>
+                                        <option value="damaged">有破损</option>
+                                        <option value="no">已剪掉</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>包装是否完好</label>
+                                    <select id="packageOk">
+                                        <option value="yes">是</option>
+                                        <option value="damaged">有破损</option>
+                                        <option value="no">无包装</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>实际穿着感受</label>
+                                    <select id="fitFeeling">
+                                        <option value="">请选择</option>
+                                        <option value="too_small">太紧/太小</option>
+                                        <option value="slightly_small">略紧</option>
+                                        <option value="fit">合身</option>
+                                        <option value="slightly_large">略松</option>
+                                        <option value="too_large">太松/太大</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-item full-width">
+                                <label>试穿详细描述(多语言)</label>
+                                <div class="multi-lang-inputs">
+                                    <div class="lang-item">
+                                        <span class="lang-tag">中文</span>
+                                        <textarea id="feedbackDescZh" rows="2" placeholder="中文描述..."></textarea>
+                                    </div>
+                                    <div class="lang-item">
+                                        <span class="lang-tag">English</span>
+                                        <textarea id="feedbackDescEn" rows="2" placeholder="English description..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-item full-width">
+                                <label>图片URL(多个用逗号分隔)</label>
+                                <input type="text" id="feedbackImages" placeholder="https://..., https://...">
+                            </div>
+                            <button type="submit" class="btn btn-primary">提交试穿反馈</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="subtab-buyer-reason" class="sub-tab-content">
+                    <div class="form-card">
+                        <h3>多语言退换原因</h3>
+                        <div class="reason-list" id="reasonMultiLangList">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="subtab-buyer-logistics" class="sub-tab-content">
+                    <div class="form-card">
+                        <h3>物流轨迹录入</h3>
+                        <form id="logisticsForm">
+                            <div class="form-grid">
+                                <div class="form-item">
+                                    <label>退换申请 *</label>
+                                    <select id="logisticsReturnId" required>
+                                        <option value="">请选择申请</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>物流单号</label>
+                                    <input type="text" id="trackingNo" placeholder="物流跟踪单号">
+                                </div>
+                                <div class="form-item">
+                                    <label>物流公司</label>
+                                    <input type="text" id="carrier" placeholder="如：DHL, FedEx, UPS">
+                                </div>
+                                <div class="form-item">
+                                    <label>轨迹时间 *</label>
+                                    <input type="datetime-local" id="trackTime" required>
+                                </div>
+                                <div class="form-item">
+                                    <label>轨迹节点 *</label>
+                                    <select id="trackNode" required>
+                                        <option value="">请选择</option>
+                                        <option value="buyer_shipped">买家已发货</option>
+                                        <option value="in_transit">运输中</option>
+                                        <option value="customs">清关中</option>
+                                        <option value="customs_passed">清关完成</option>
+                                        <option value="arrived_warehouse">到达仓库</option>
+                                        <option value="warehouse_received">仓库签收</option>
+                                        <option value="returned">退回买家</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>所在国家/地区</label>
+                                    <input type="text" id="trackLocation" placeholder="如：Los Angeles, US">
+                                </div>
+                            </div>
+                            <div class="form-item full-width">
+                                <label>轨迹描述</label>
+                                <textarea id="trackDesc" rows="2" placeholder="轨迹详情描述..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">添加轨迹</button>
+                        </form>
+                    </div>
+
+                    <div class="data-card">
+                        <h3>物流轨迹列表</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>申请编号</th>
+                                    <th>物流单号</th>
+                                    <th>物流公司</th>
+                                    <th>时间</th>
+                                    <th>节点</th>
+                                    <th>地点</th>
+                                    <th>描述</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logisticsList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="subtab-buyer-pending" class="sub-tab-content">
+                    <div class="data-card">
+                        <h3>待买家反馈列表</h3>
+                        <p class="hint-text">以下申请等待买家补充试穿反馈，尺码争议案件必须有试穿反馈才能继续。</p>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>申请编号</th>
+                                    <th>订单号</th>
+                                    <th>SKU</th>
+                                    <th>原因分类</th>
+                                    <th>是否需要反馈</th>
+                                    <th>等待时长</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingFeedbackList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 仓库入库模块 -->
+        <section id="tab-warehouse" class="tab-content">
+            <div class="module-container">
+                <h2>仓库入库与质检</h2>
+                <div class="sub-tabs">
+                    <button class="sub-tab-btn active" data-subtab="wh-inbound">退货入库</button>
+                    <button class="sub-tab-btn" data-subtab="wh-qc">质检判定</button>
+                    <button class="sub-tab-btn" data-subtab="wh-exchange">换货锁库</button>
+                    <button class="sub-tab-btn" data-subtab="wh-list">仓库处理列表</button>
+                </div>
+
+                <div id="subtab-wh-inbound" class="sub-tab-content active">
+                    <div class="form-card">
+                        <h3>退货仓入库处理</h3>
+                        <form id="inboundForm">
+                            <div class="form-grid">
+                                <div class="form-item">
+                                    <label>退换申请 *</label>
+                                    <select id="inboundReturnId" required>
+                                        <option value="">请选择待入库申请</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>入库仓库</label>
+                                    <select id="warehouseCode">
+                                        <option value="CN_SZ">中国深圳仓</option>
+                                        <option value="CN_GZ">中国广州仓</option>
+                                        <option value="US_LA">美国洛杉矶仓</option>
+                                        <option value="DE_FRA">德国法兰克福仓</option>
+                                        <option value="JP_TYO">日本东京仓</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>实收数量 *</label>
+                                    <input type="number" id="receivedQty" min="0" required>
+                                </div>
+                                <div class="form-item">
+                                    <label>入库时间</label>
+                                    <input type="datetime-local" id="inboundTime">
+                                </div>
+                                <div class="form-item">
+                                    <label>包装状态</label>
+                                    <select id="inboundPackage">
+                                        <option value="good">完好</option>
+                                        <option value="slightly_damaged">轻微破损</option>
+                                        <option value="damaged">严重破损</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>是否与申请一致</label>
+                                    <select id="inboundMatch">
+                                        <option value="yes">完全一致</option>
+                                        <option value="qty_diff">数量差异</option>
+                                        <option value="item_diff">商品差异</option>
+                                        <option value="missing">缺少配件</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-item full-width">
+                                <label>入库备注</label>
+                                <textarea id="inboundRemark" rows="2" placeholder="仓库入库备注..."></textarea>
+                            </div>
+                            <div class="warning-box" id="inboundWarning" style="display:none;">
+                                ⚠️ 入库后将锁定退换原因，无法修改！请确认信息无误。
+                            </div>
+                            <button type="submit" class="btn btn-primary">确认入库</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="subtab-wh-qc" class="sub-tab-content">
+                    <div class="form-card">
+                        <h3>质检判定处理</h3>
+                        <form id="qcForm">
+                            <div class="form-grid">
+                                <div class="form-item">
+                                    <label>退换申请 *</label>
+                                    <select id="qcReturnId" required>
+                                        <option value="">请选择待质检申请</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>质检结果 *</label>
+                                    <select id="qcResult" required>
+                                        <option value="">请选择</option>
+                                        <option value="pass">质检通过(同意退换)</option>
+                                        <option value="reject">质检不通过(拒绝退换)</option>
+                                        <option value="partial">部分通过</option>
+                                        <option value="arbitration">需仲裁判定</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>尺码核对</label>
+                                    <select id="qcSizeCheck">
+                                        <option value="correct">尺码正确</option>
+                                        <option value="wrong">尺码错误</option>
+                                        <option value="label_error">标签错误</option>
+                                        <option value="not_applicable">不适用</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>是否影响二次销售</label>
+                                    <select id="qcResellable">
+                                        <option value="yes">不影响(可售)</option>
+                                        <option value="slightly">轻微影响</option>
+                                        <option value="no">严重影响(不可售)</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>污渍情况</label>
+                                    <select id="qcStain">
+                                        <option value="none">无污渍</option>
+                                        <option value="minor">轻微污渍</option>
+                                        <option value="serious">严重污渍</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>磨损情况</label>
+                                    <select id="qcWear">
+                                        <option value="none">无磨损</option>
+                                        <option value="minor">轻微磨损</option>
+                                        <option value="serious">严重磨损/穿着痕迹</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>质检人</label>
+                                    <input type="text" id="qcInspector" placeholder="质检员姓名/工号">
+                                </div>
+                                <div class="form-item">
+                                    <label>质检时间</label>
+                                    <input type="datetime-local" id="qcTime">
+                                </div>
+                            </div>
+                            <div class="form-item full-width">
+                                <label>质检详细说明</label>
+                                <textarea id="qcRemark" rows="3" placeholder="质检详细说明，包括尺码测量数据、照片链接等..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">提交质检结果</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="subtab-wh-exchange" class="sub-tab-content">
+                    <div class="form-card">
+                        <h3>换货锁库处理</h3>
+                        <form id="exchangeForm">
+                            <div class="form-grid">
+                                <div class="form-item">
+                                    <label>换货申请 *</label>
+                                    <select id="exchangeReturnId" required>
+                                        <option value="">请选择换货申请</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>目标SKU</label>
+                                    <input type="text" id="exchangeTargetSku" readonly>
+                                </div>
+                                <div class="form-item">
+                                    <label>目标尺码</label>
+                                    <input type="text" id="exchangeTargetSize" readonly>
+                                </div>
+                                <div class="form-item">
+                                    <label>可用库存</label>
+                                    <input type="text" id="exchangeAvailableStock" readonly>
+                                </div>
+                                <div class="form-item">
+                                    <label>锁库数量 *</label>
+                                    <input type="number" id="lockQty" min="1" value="1" required>
+                                </div>
+                                <div class="form-item">
+                                    <label>预计发货时间</label>
+                                    <input type="date" id="expectedShipDate">
+                                </div>
+                            </div>
+                            <div class="stock-warning" id="stockWarning" style="display:none;">
+                                ❌ 库存不足，无法锁库！
+                            </div>
+                            <button type="submit" class="btn btn-primary">确认锁库并发货</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="subtab-wh-list" class="sub-tab-content">
+                    <div class="data-card">
+                        <h3>仓库处理列表</h3>
+                        <div class="filter-bar">
+                            <select id="whFilterStatus">
+                                <option value="">全部状态</option>
+                                <option value="warehouse_pending">待入库</option>
+                                <option value="warehouse_in">已入库待质检</option>
+                                <option value="qc_pending">待质检</option>
+                                <option value="qc_pass">质检通过</option>
+                                <option value="qc_reject">质检不通过</option>
+                            </select>
+                            <button class="btn btn-default" onclick="renderWarehouseList()">筛选</button>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>申请编号</th>
+                                    <th>订单号</th>
+                                    <th>SKU</th>
+                                    <th>入库状态</th>
+                                    <th>质检结果</th>
+                                    <th>换货锁库</th>
+                                    <th>原因锁定</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="warehouseList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 退款试算模块 -->
+        <section id="tab-refund" class="tab-content">
+            <div class="module-container">
+                <h2>退款试算与渠道</h2>
+                <div class="sub-tabs">
+                    <button class="sub-tab-btn active" data-subtab="refund-calc">退款试算</button>
+                    <button class="sub-tab-btn" data-subtab="refund-channel">退款渠道</button>
+                    <button class="sub-tab-btn" data-subtab="refund-list">退款列表</button>
+                </div>
+
+                <div id="subtab-refund-calc" class="sub-tab-content active">
+                    <div class="form-card">
+                        <h3>退款金额试算</h3>
+                        <form id="refundCalcForm">
+                            <div class="form-grid">
+                                <div class="form-item">
+                                    <label>退换申请 *</label>
+                                    <select id="refundCalcReturnId" required onchange="autoFillRefundData()">
+                                        <option value="">请选择申请</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>商品单价(USD)</label>
+                                    <input type="number" id="refundUnitPrice" step="0.01" min="0">
+                                </div>
+                                <div class="form-item">
+                                    <label>退款数量</label>
+                                    <input type="number" id="refundQty" min="1" value="1">
+                                </div>
+                                <div class="form-item">
+                                    <label>商品小计(USD)</label>
+                                    <input type="text" id="refundGoodsAmount" readonly>
+                                </div>
+                                <div class="form-item">
+                                    <label>运费承担方</label>
+                                    <select id="shippingPayer" onchange="calculateRefund()">
+                                        <option value="seller">卖家承担</option>
+                                        <option value="buyer">买家承担</option>
+                                        <option value="split">双方分担</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>发货运费(USD)</label>
+                                    <input type="number" id="refundShippingFee" step="0.01" min="0" value="0" onchange="calculateRefund()">
+                                </div>
+                                <div class="form-item">
+                                    <label>退货运费(USD)</label>
+                                    <input type="number" id="refundReturnShipping" step="0.01" min="0" value="0" onchange="calculateRefund()">
+                                </div>
+                                <div class="form-item">
+                                    <label>关税税费(USD)</label>
+                                    <input type="number" id="refundTaxFee" step="0.01" min="0" value="0" onchange="calculateRefund()">
+                                </div>
+                                <div class="form-item">
+                                    <label>关税承担方</label>
+                                    <select id="taxPayer" onchange="calculateRefund()">
+                                        <option value="seller">卖家承担</option>
+                                        <option value="buyer">买家承担</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>补偿/扣款(USD)</label>
+                                    <input type="number" id="refundAdjust" step="0.01" value="0" onchange="calculateRefund()">
+                                </div>
+                                <div class="form-item">
+                                    <label>平台手续费(USD)</label>
+                                    <input type="number" id="refundPlatformFee" step="0.01" min="0" value="0" onchange="calculateRefund()">
+                                </div>
+                            </div>
+                            <div class="calc-result-box">
+                                <div class="calc-row">
+                                    <span>商品退款：</span>
+                                    <span id="calcGoodsRefund">$0.00</span>
+                                </div>
+                                <div class="calc-row">
+                                    <span>运费退款：</span>
+                                    <span id="calcShippingRefund">$0.00</span>
+                                </div>
+                                <div class="calc-row">
+                                    <span>关税退款：</span>
+                                    <span id="calcTaxRefund">$0.00</span>
+                                </div>
+                                <div class="calc-row highlight">
+                                    <span>预计退款总额：</span>
+                                    <span id="calcTotalRefund">$0.00</span>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-default" onclick="calculateRefund()">重新计算</button>
+                            <button type="submit" class="btn btn-primary">确认退款</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="subtab-refund-channel" class="sub-tab-content">
+                    <div class="form-card">
+                        <h3>退款渠道管理</h3>
+                        <form id="refundChannelForm">
+                            <div class="form-grid">
+                                <div class="form-item">
+                                    <label>退换申请 *</label>
+                                    <select id="channelReturnId" required>
+                                        <option value="">请选择申请</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>退款渠道 *</label>
+                                    <select id="refundChannel" required>
+                                        <option value="">请选择</option>
+                                        <option value="original">原路退回</option>
+                                        <option value="paypal">PayPal</option>
+                                        <option value="stripe">Stripe</option>
+                                        <option value="alipay">支付宝</option>
+                                        <option value="wechat">微信支付</option>
+                                        <option value="bank_transfer">银行转账</option>
+                                        <option value="store_credit">店铺余额/积分</option>
+                                        <option value="coupon">优惠券补偿</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>退款金额(USD) *</label>
+                                    <input type="number" id="channelAmount" step="0.01" min="0" required>
+                                </div>
+                                <div class="form-item">
+                                    <label>外部交易号</label>
+                                    <input type="text" id="externalTxnId" placeholder="支付平台交易号">
+                                </div>
+                            </div>
+                            <div class="form-item full-width">
+                                <label>渠道备注</label>
+                                <textarea id="channelRemark" rows="2"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">提交退款</button>
+                        </form>
+                    </div>
+
+                    <div class="data-card">
+                        <h3>退款渠道配置</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>渠道编码</th>
+                                    <th>渠道名称</th>
+                                    <th>手续费率</th>
+                                    <th>到账时效</th>
+                                    <th>支持币种</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>original</td><td>原路退回</td><td>0.5%</td><td>3-15工作日</td><td>多币种</td><td><span class="badge badge-success">启用</span></td></tr>
+                                <tr><td>paypal</td><td>PayPal</td><td>2.9%+0.3</td><td>1-3工作日</td><td>USD,EUR,GBP等</td><td><span class="badge badge-success">启用</span></td></tr>
+                                <tr><td>stripe</td><td>Stripe</td><td>2.9%+0.3</td><td>2-5工作日</td><td>多币种</td><td><span class="badge badge-success">启用</span></td></tr>
+                                <tr><td>bank_transfer</td><td>银行转账</td><td>按银行</td><td>1-7工作日</td><td>多币种</td><td><span class="badge badge-warning">人工</span></td></tr>
+                                <tr><td>store_credit</td><td>店铺余额</td><td>0%</td><td>实时</td><td>USD</td><td><span class="badge badge-success">启用</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="subtab-refund-list" class="sub-tab-content">
+                    <div class="data-card">
+                        <h3>退款处理列表</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>申请编号</th>
+                                    <th>订单号</th>
+                                    <th>商品金额</th>
+                                    <th>运费</th>
+                                    <th>关税</th>
+                                    <th>退款总额</th>
+                                    <th>退款渠道</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="refundList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 争议仲裁模块 -->
+        <section id="tab-arbitration" class="tab-content">
+            <div class="module-container">
+                <h2>争议仲裁中心</h2>
+                <div class="sub-tabs">
+                    <button class="sub-tab-btn active" data-subtab="arb-pending">待仲裁列表</button>
+                    <button class="sub-tab-btn" data-subtab="arb-handle">仲裁处理</button>
+                    <button class="sub-tab-btn" data-subtab="arb-malicious">恶意退换管理</button>
+                    <button class="sub-tab-btn" data-subtab="arb-history">仲裁历史</button>
+                </div>
+
+                <div id="subtab-arb-pending" class="sub-tab-content active">
+                    <div class="data-card">
+                        <h3>待仲裁案件列表</h3>
+                        <p class="hint-text">进入争议仲裁后，普通客服无法直接修改结论，需仲裁员处理。</p>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>申请编号</th>
+                                    <th>订单号</th>
+                                    <th>SKU</th>
+                                    <th>争议焦点</th>
+                                    <th>质检意见</th>
+                                    <th>试穿反馈</th>
+                                    <th>恶意标记</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="arbitrationPendingList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="subtab-arb-handle" class="sub-tab-content">
+                    <div class="form-card">
+                        <h3>仲裁处理</h3>
+                        <form id="arbitrationForm">
+                            <div class="form-grid">
+                                <div class="form-item">
+                                    <label>仲裁案件 *</label>
+                                    <select id="arbReturnId" required onchange="loadArbitrationDetail()">
+                                        <option value="">请选择案件</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>仲裁员</label>
+                                    <input type="text" id="arbOfficer" placeholder="仲裁员姓名/工号">
+                                </div>
+                                <div class="form-item">
+                                    <label>仲裁结论 *</label>
+                                    <select id="arbResult" required>
+                                        <option value="">请选择</option>
+                                        <option value="support_buyer">支持买家(同意退换)</option>
+                                        <option value="support_seller">支持卖家(拒绝退换)</option>
+                                        <option value="partial_refund">部分退款</option>
+                                        <option value="exchange_only">仅换货不退款</option>
+                                        <option value="compensation">补偿金方案</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>仲裁等级</label>
+                                    <select id="arbLevel">
+                                        <option value="normal">普通仲裁</option>
+                                        <option value="senior">高级仲裁</option>
+                                        <option value="expert">专家仲裁</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>退款金额(USD)</label>
+                                    <input type="number" id="arbRefundAmount" step="0.01" min="0" value="0">
+                                </div>
+                                <div class="form-item">
+                                    <label>补偿金额(USD)</label>
+                                    <input type="number" id="arbCompensation" step="0.01" min="0" value="0">
+                                </div>
+                            </div>
+                            <div class="arb-detail-box" id="arbDetailBox">
+                                <h4>案件详情</h4>
+                                <div id="arbDetailContent">请先选择仲裁案件</div>
+                            </div>
+                            <div class="form-item full-width">
+                                <label>仲裁依据说明 *</label>
+                                <textarea id="arbReason" rows="3" placeholder="请详细说明仲裁依据、参考规则、证据分析..." required></textarea>
+                            </div>
+                            <div class="permission-box" id="csPermissionWarning" style="display:none;">
+                                🔒 普通客服权限：仲裁结论需主管复核后生效
+                            </div>
+                            <button type="submit" class="btn btn-primary">提交仲裁结论</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="subtab-arb-malicious" class="sub-tab-content">
+                    <div class="data-card">
+                        <h3>恶意退换标记管理</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>申请编号</th>
+                                    <th>买家账号</th>
+                                    <th>历史退换次数</th>
+                                    <th>恶意标记</th>
+                                    <th>标记原因</th>
+                                    <th>标记时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="maliciousList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="subtab-arb-history" class="sub-tab-content">
+                    <div class="data-card">
+                        <h3>仲裁历史记录</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>仲裁编号</th>
+                                    <th>申请编号</th>
+                                    <th>仲裁员</th>
+                                    <th>结论</th>
+                                    <th>退款金额</th>
+                                    <th>仲裁时间</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody id="arbitrationHistoryList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 原因分析模块 -->
+        <section id="tab-analysis" class="tab-content">
+            <div class="module-container">
+                <h2>原因分析与统计</h2>
+                <div class="sub-tabs">
+                    <button class="sub-tab-btn active" data-subtab="ana-reason">退换原因统计</button>
+                    <button class="sub-tab-btn" data-subtab="ana-size">尺码问题分析</button>
+                    <button class="sub-tab-btn" data-subtab="ana-demo">业务样例演示</button>
+                </div>
+
+                <div id="subtab-ana-reason" class="sub-tab-content active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">总申请数</div>
+                            <div class="stat-value" id="statTotal">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">换货占比</div>
+                            <div class="stat-value" id="statExchangeRate">0%</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">退款占比</div>
+                            <div class="stat-value" id="statRefundRate">0%</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">质检通过率</div>
+                            <div class="stat-value" id="statQcPassRate">0%</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">仲裁率</div>
+                            <div class="stat-value" id="statArbRate">0%</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">恶意退换</div>
+                            <div class="stat-value" id="statMalicious">0</div>
+                        </div>
+                    </div>
+
+                    <div class="data-card">
+                        <h3>退换原因分布</h3>
+                        <div id="reasonChart" class="bar-chart"></div>
+                    </div>
+                </div>
+
+                <div id="subtab-ana-size" class="sub-tab-content">
+                    <div class="data-card">
+                        <h3>尺码问题深度分析</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>SKU</th>
+                                    <th>商品名称</th>
+                                    <th>申请尺码</th>
+                                    <th>目标尺码</th>
+                                    <th>问题类型</th>
+                                    <th>次数</th>
+                                    <th>占比</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sizeAnalysisList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="subtab-ana-demo" class="sub-tab-content">
+                    <div class="data-card">
+                        <h3>🎯 业务规则场景演示</h3>
+                        <p class="hint-text">点击下方按钮，快速创建演示数据并验证核心业务规则。</p>
+                        <div class="demo-buttons">
+                            <button class="btn btn-demo" onclick="demoScenarioOverdue()">📅 场景1：超期拦截演示</button>
+                            <button class="btn btn-demo" onclick="demoScenarioNoFeedback()">👕 场景2：无试穿反馈退回</button>
+                            <button class="btn btn-demo" onclick="demoScenarioReasonLocked()">🔒 场景3：入库后原因锁定</button>
+                            <button class="btn btn-demo" onclick="demoScenarioStockShortage()">📦 场景4：换货库存不足</button>
+                            <button class="btn btn-demo btn-primary" onclick="initAllDemoData()">🚀 一键初始化全部演示数据</button>
+                            <button class="btn btn-danger" onclick="clearAllData()">🗑️ 清空所有数据</button>
+                        </div>
+                        <div id="demoResult" class="demo-result"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 消息提示 -->
+    <div id="toast" class="toast"></div>
+
+    <script src="js/storage.js"></script>
+    <script src="js/models.js"></script>
+    <script src="js/rules.js"></script>
+    <script src="js/customer-service.js"></script>
+    <script src="js/buyer.js"></script>
+    <script src="js/warehouse.js"></script>
+    <script src="js/refund.js"></script>
+    <script src="js/arbitration.js"></script>
+    <script src="js/analysis.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -395,6 +395,122 @@ const AnalysisModule = {
         this.refreshAll();
     },
 
+    demoScenarioArbitration() {
+        const result = document.getElementById('demoResult');
+        result.innerHTML = '<div class="demo-title">⚖️ 场景5：仲裁权限验证演示</div>';
+
+        const now = new Date();
+
+        const order = Models.createOrder({
+            orderId: 'DEMO_ARB_' + Math.floor(Math.random() * 1000),
+            buyerAccount: 'arb_buyer@test.com',
+            country: 'US',
+            orderTime: now.toISOString().slice(0, 16),
+            receiveTime: now.toISOString().slice(0, 16),
+            returnDeadline: 30,
+            orderAmount: 159.99,
+            shippingFee: 10.00
+        });
+        Storage.add(Storage.KEYS.ORDERS, order);
+
+        const sku = Models.createSku({
+            skuCode: 'DEMO_ARB_SHIRT_M',
+            skuName: '演示衬衫',
+            size: 'M',
+            color: '蓝色',
+            stock: 50,
+            price: 159.99
+        });
+        Storage.add(Storage.KEYS.SKUS, sku);
+
+        const returnItem = Models.createReturn({
+            orderId: order.orderId,
+            orderRef: order.id,
+            skuCode: sku.skuCode,
+            skuRef: sku.id,
+            returnType: 'return',
+            quantity: 1,
+            reason: 'quality',
+            applyTime: now.toISOString()
+        });
+        returnItem.status = 'arbitration';
+        returnItem.hasFeedback = true;
+        returnItem.qcResult = 'arbitration';
+        returnItem.hasInbound = true;
+        returnItem.reasonLocked = true;
+        Storage.add(Storage.KEYS.RETURNS, returnItem);
+
+        const feedback = Models.createFeedback({
+            returnId: returnItem.id,
+            tryOnDuration: '5分钟',
+            hasDamage: '否',
+            tagKept: '是',
+            packageOk: '是',
+            fitFeeling: '领口有污渍',
+            descriptionZh: '收到货后发现领口有明显污渍，怀疑是退货二次销售',
+            descriptionEn: 'Found stain on collar after opening package'
+        });
+        Storage.add(Storage.KEYS.FEEDBACKS, feedback);
+
+        const qc = Models.createQcResult({
+            returnId: returnItem.id,
+            result: 'arbitration',
+            sizeCheck: '符合',
+            resellable: '否',
+            stain: '有污渍',
+            wear: '轻微磨损',
+            inspector: '质检员A',
+            remark: '污渍位置与描述一致，但无法判断是发货前还是买家造成',
+            qcTime: now.toISOString()
+        });
+        Storage.add(Storage.KEYS.QC_RESULTS, qc);
+
+        const csValidation = Rules.validateArbitration(returnItem, 'cs');
+        const supervisorValidation = Rules.validateArbitration(returnItem, 'supervisor');
+        const arbitratorValidation = Rules.validateArbitration(returnItem, 'arbitrator');
+
+        result.innerHTML += `
+            <div class="demo-step">步骤1：创建质量争议案件，已进入仲裁状态（质检判定存疑）</div>
+            <div class="demo-step">案件信息：${returnItem.id} | 订单：${order.orderId} | 原因：质量问题</div>
+            <div class="demo-step">步骤2：测试各角色权限</div>
+            <div class="demo-step">
+                👤 <strong>普通客服 (cs)</strong><br>
+                &nbsp;&nbsp;可提交草稿：${csValidation.canSubmitDraft ? '✅ 是' : '❌ 否'}<br>
+                &nbsp;&nbsp;可直接生效：${csValidation.canFinalize ? '✅ 是' : '❌ 否（需主管复核）'}<br>
+                &nbsp;&nbsp;校验通过：${csValidation.valid ? '✅ 是' : '❌ 否 - ' + csValidation.errors.join(', ')}
+            </div>
+            <div class="demo-step">
+                👔 <strong>主管 (supervisor)</strong><br>
+                &nbsp;&nbsp;可提交草稿：${supervisorValidation.canSubmitDraft ? '✅ 是' : '❌ 否'}<br>
+                &nbsp;&nbsp;可直接生效：${supervisorValidation.canFinalize ? '✅ 是' : '❌ 否'}<br>
+                &nbsp;&nbsp;校验通过：${supervisorValidation.valid ? '✅ 是' : '❌ 否 - ' + supervisorValidation.errors.join(', ')}
+            </div>
+            <div class="demo-step">
+                ⚖️ <strong>仲裁员 (arbitrator)</strong><br>
+                &nbsp;&nbsp;可提交草稿：${arbitratorValidation.canSubmitDraft ? '✅ 是' : '❌ 否'}<br>
+                &nbsp;&nbsp;可直接生效：${arbitratorValidation.canFinalize ? '✅ 是' : '❌ 否'}<br>
+                &nbsp;&nbsp;校验通过：${arbitratorValidation.valid ? '✅ 是' : '❌ 否 - ' + arbitratorValidation.errors.join(', ')}
+            </div>
+            <div class="demo-step demo-pass">
+                ✅ 结论1：普通客服不能直接生效仲裁结论（权限拦截正常）
+            </div>
+            <div class="demo-step demo-pass">
+                ✅ 结论2：主管和仲裁员可直接生效仲裁结论（授权角色可完成处理）
+            </div>
+            <div class="demo-step demo-pass">
+                ✅ 结论3：三级权限体系（cs → supervisor → arbitrator）规则生效正常
+            </div>
+            <div class="demo-step">
+                📌 操作验证：请点击顶部【争议仲裁】Tab，使用右上角角色切换功能：<br>
+                &nbsp;&nbsp;1. 选择"普通客服" → 仲裁处理页按钮显示"提交初步意见（待主管复核）"<br>
+                &nbsp;&nbsp;2. 选择"主管"或"仲裁员" → 按钮显示"提交并生效仲裁结论"<br>
+                &nbsp;&nbsp;3. 普通客服提交的意见会进入"待复核"列表，由主管/仲裁员审核生效
+            </div>
+        `;
+
+        this.refreshAll();
+    },
+
     initAllDemoData() {
         this.clearAllData(true);
 

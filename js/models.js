@@ -250,7 +250,12 @@ const Models = {
             refundAmount: parseFloat(data.refundAmount) || 0,
             compensation: parseFloat(data.compensation) || 0,
             reason: data.reason,
-            status: 'final',
+            status: data.status || 'final',
+            submitterRole: data.submitterRole || '',
+            submittedBy: data.submittedBy || '',
+            reviewedBy: data.reviewedBy || '',
+            reviewTime: data.reviewTime || '',
+            rejectReason: data.rejectReason || '',
             createdAt: new Date().toISOString()
         };
     }

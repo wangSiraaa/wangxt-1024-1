@@ -262,26 +262,66 @@ const Rules = {
         };
     },
 
-    validateArbitration(returnItem, userRole) {
+    validateArbitration(returnItem, userRole, mode) {
         const errors = [];
         const warnings = [];
 
         if (!returnItem) {
             errors.push('退换申请不存在');
-            return { valid: false, errors, warnings };
+            return { valid: false, errors, warnings, canFinalize: false };
         }
 
-        if (returnItem.status !== 'arbitration' && returnItem.maliciousFlag !== 'malicious') {
-            if (!returnItem.qcResult || returnItem.qcResult !== 'arbitration') {
-                warnings.push('该申请尚未进入仲裁流程，提交后将自动转为仲裁状态');
+        mode = mode || 'submit';
+
+        const isArbitrated = returnItem.status === 'arbitration' ||
+            returnItem.maliciousFlag === 'malicious' ||
+            returnItem.qcResult === 'arbitration';
+
+        if (!isArbitrated) {
+            warnings.push('该申请尚未进入仲裁流程，提交后将自动转为仲裁状态');
+        }
+
+        let canFinalize = false;
+        let canSubmitDraft = false;
+
+        if (userRole === 'arbitrator') {
+            canFinalize = true;
+            canSubmitDraft = true;
+        } else if (userRole === 'supervisor') {
+            canFinalize = true;
+            canSubmitDraft = true;
+        } else if (userRole === 'cs') {
+            canSubmitDraft = true;
+            if (isArbitrated) {
+                warnings.push('普通客服权限：已进入仲裁的案件，提交的结论需主管或仲裁员复核后生效');
             }
         }
 
-        if (userRole === 'cs' && returnItem.status === 'arbitration') {
-            errors.push('该案件已进入仲裁，普通客服无法直接修改结论');
+        if (mode === 'finalize' && !canFinalize) {
+            errors.push('当前角色无权限直接生效仲裁结论');
         }
 
-        return { valid: errors.length === 0, errors, warnings };
+        if (mode === 'submit' && !canSubmitDraft) {
+            errors.push('当前角色无权限提交仲裁结论');
+        }
+
+        return {
+            valid: errors.length === 0,
+            errors,
+            warnings,
+            canFinalize,
+            canSubmitDraft
+        };
+    },
+
+    canCsModifyConclusion(returnItem) {
+        if (!returnItem) return false;
+        if (returnItem.status !== 'arbitration' &&
+            returnItem.maliciousFlag !== 'malicious' &&
+            returnItem.qcResult !== 'arbitration') {
+            return true;
+        }
+        return false;
     },
 
     validateReasonModification(returnItem) {

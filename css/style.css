@@ -251,6 +251,11 @@ body {
     background: #40a9ff;
 }
 
+.btn-disabled {
+    opacity: 0.5;
+    cursor: not-allowed !important;
+}
+
 .btn-default {
     background: white;
     color: #595959;
@@ -407,6 +412,66 @@ body {
     border-radius: 4px;
     margin: 12px 0;
     font-size: 13px;
+}
+
+.role-switcher {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.role-label {
+    font-size: 13px;
+    color: #595959;
+    font-weight: 500;
+}
+
+.role-buttons {
+    display: flex;
+    gap: 4px;
+    background: #f0f0f0;
+    padding: 3px;
+    border-radius: 6px;
+}
+
+.role-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    border: none;
+    background: transparent;
+    color: #595959;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.role-btn:hover {
+    background: #e8e8e8;
+}
+
+.role-btn.active {
+    background: #fff;
+    color: #1890ff;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.permission-box.warning {
+    background: #fff7e6;
+    border-color: #ffd591;
+    color: #ad6800;
+}
+
+.permission-box.success {
+    background: #f6ffed;
+    border-color: #b7eb8f;
+    color: #389e0d;
+}
+
+.permission-box.danger {
+    background: #fff1f0;
+    border-color: #ffa39e;
+    color: #cf1322;
 }
 
 .calc-result-box {

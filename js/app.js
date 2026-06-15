@@ -154,6 +154,10 @@ window.demoScenarioStockShortage = () => {
     if (typeof AnalysisModule !== 'undefined') AnalysisModule.demoScenarioStockShortage();
 };
 
+window.demoScenarioArbitration = () => {
+    if (typeof AnalysisModule !== 'undefined') AnalysisModule.demoScenarioArbitration();
+};
+
 window.initAllDemoData = () => {
     if (typeof AnalysisModule !== 'undefined') AnalysisModule.initAllDemoData();
 };

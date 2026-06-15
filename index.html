@@ -906,9 +906,20 @@
         <!-- 争议仲裁模块 -->
         <section id="tab-arbitration" class="tab-content">
             <div class="module-container">
-                <h2>争议仲裁中心</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h2 style="margin-bottom: 0;">争议仲裁中心</h2>
+                    <div class="role-switcher">
+                        <span class="role-label">当前角色：</span>
+                        <div class="role-buttons">
+                            <button type="button" class="role-btn active" data-role="cs" onclick="ArbitrationModule.switchRole('cs')">👤 普通客服</button>
+                            <button type="button" class="role-btn" data-role="supervisor" onclick="ArbitrationModule.switchRole('supervisor')">👔 主管</button>
+                            <button type="button" class="role-btn" data-role="arbitrator" onclick="ArbitrationModule.switchRole('arbitrator')">⚖️ 仲裁员</button>
+                        </div>
+                    </div>
+                </div>
                 <div class="sub-tabs">
                     <button class="sub-tab-btn active" data-subtab="arb-pending">待仲裁列表</button>
+                    <button class="sub-tab-btn" data-subtab="arb-review">待复核</button>
                     <button class="sub-tab-btn" data-subtab="arb-handle">仲裁处理</button>
                     <button class="sub-tab-btn" data-subtab="arb-malicious">恶意退换管理</button>
                     <button class="sub-tab-btn" data-subtab="arb-history">仲裁历史</button>
@@ -932,6 +943,28 @@
                                 </tr>
                             </thead>
                             <tbody id="arbitrationPendingList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="subtab-arb-review" class="sub-tab-content">
+                    <div class="data-card">
+                        <h3>待复核仲裁列表</h3>
+                        <p class="hint-text">普通客服提交的仲裁结论需主管或仲裁员复核后生效。</p>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>仲裁编号</th>
+                                    <th>申请编号</th>
+                                    <th>提交人</th>
+                                    <th>拟处理结论</th>
+                                    <th>退款金额</th>
+                                    <th>提交时间</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="arbitrationReviewList"></tbody>
                         </table>
                     </div>
                 </div>
@@ -987,10 +1020,11 @@
                                 <label>仲裁依据说明 *</label>
                                 <textarea id="arbReason" rows="3" placeholder="请详细说明仲裁依据、参考规则、证据分析..." required></textarea>
                             </div>
-                            <div class="permission-box" id="csPermissionWarning" style="display:none;">
-                                🔒 普通客服权限：仲裁结论需主管复核后生效
+                            <div class="permission-box" id="rolePermissionTip">
+                                <span id="rolePermissionIcon">👤</span>
+                                <span id="rolePermissionText">普通客服权限：已进入仲裁的案件无法直接修改结论，可提交初步意见待主管复核</span>
                             </div>
-                            <button type="submit" class="btn btn-primary">提交仲裁结论</button>
+                            <button type="submit" class="btn btn-primary" id="arbSubmitBtn">提交仲裁结论</button>
                         </form>
                     </div>
                 </div>
@@ -1110,6 +1144,7 @@
                             <button class="btn btn-demo" onclick="demoScenarioNoFeedback()">👕 场景2：无试穿反馈退回</button>
                             <button class="btn btn-demo" onclick="demoScenarioReasonLocked()">🔒 场景3：入库后原因锁定</button>
                             <button class="btn btn-demo" onclick="demoScenarioStockShortage()">📦 场景4：换货库存不足</button>
+                            <button class="btn btn-demo" onclick="demoScenarioArbitration()">⚖️ 场景5：仲裁权限验证</button>
                             <button class="btn btn-demo btn-primary" onclick="initAllDemoData()">🚀 一键初始化全部演示数据</button>
                             <button class="btn btn-danger" onclick="clearAllData()">🗑️ 清空所有数据</button>
                         </div>

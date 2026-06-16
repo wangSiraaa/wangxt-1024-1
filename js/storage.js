@@ -8,7 +8,9 @@ const Storage = {
         QC_RESULTS: 'cx_qc_results',
         REFUNDS: 'cx_refunds',
         ARBITRATIONS: 'cx_arbitrations',
-        INBOUND_RECORDS: 'cx_inbound_records'
+        INBOUND_RECORDS: 'cx_inbound_records',
+        ARBITRATION_EVIDENCES: 'cx_arbitration_evidences',
+        WAREHOUSE_STOCKS: 'cx_warehouse_stocks'
     },
 
     get(key) {
@@ -89,6 +91,14 @@ function toDateTimeLocal(date) {
     const d = new Date(date);
     const pad = n => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function formatCurrency(amount, currency) {
+    if (!currency) currency = 'USD';
+    const symbols = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', CNY: '¥', AUD: 'A$', CAD: 'C$', SGD: 'S$' };
+    const sym = symbols[currency] || '$';
+    const dec = currency === 'JPY' ? 0 : 2;
+    return `${sym}${Number(amount || 0).toFixed(dec)}`;
 }
 
 function showToast(message, type = 'info') {

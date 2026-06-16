@@ -39,6 +39,46 @@ const RefundModule = {
         document.getElementById('refundQty').value = returnItem.quantity || 1;
         document.getElementById('refundShippingFee').value = order ? order.shippingFee : 0;
 
+        const orderCurrency = returnItem.orderCurrency || (order ? order.orderCurrency : 'USD');
+        const refundCurrency = returnItem.refundCurrency || orderCurrency;
+        const orderCurrEl = document.getElementById('refundOrderCurrency');
+        const refundCurrEl = document.getElementById('refundRefundCurrency');
+        if (orderCurrEl) orderCurrEl.value = orderCurrency;
+        if (refundCurrEl) refundCurrEl.value = refundCurrency;
+
+        const orderCurrDisplayEl = document.getElementById('refundOrderCurrencyDisplay');
+        const refundCurrDisplayEl = document.getElementById('refundRefundCurrencyDisplay');
+        const rateDisplayEl2 = document.getElementById('refundExchangeRateDisplay');
+        if (orderCurrDisplayEl) orderCurrDisplayEl.value = orderCurrency;
+        if (refundCurrDisplayEl) refundCurrDisplayEl.value = refundCurrency;
+
+        const crossWarehouseFee = returnItem.crossWarehouseShippingCost || 0;
+        const tariffFee = returnItem.tariffAmount || 0;
+        const crossWarehouseFeeEl = document.getElementById('refundCrossWarehouseFee');
+        const tariffFeeEl = document.getElementById('refundTariffFee');
+        if (crossWarehouseFeeEl) crossWarehouseFeeEl.value = crossWarehouseFee;
+        if (tariffFeeEl) tariffFeeEl.value = tariffFee;
+
+        let exchangeRate = 1;
+        if (orderCurrency !== refundCurrency) {
+            const fromRate = Models.EXCHANGE_RATES[orderCurrency] || 1;
+            const toRate = Models.EXCHANGE_RATES[refundCurrency] || 1;
+            exchangeRate = Number((toRate / fromRate).toFixed(6));
+        }
+        const rateEl = document.getElementById('refundExchangeRate');
+        if (rateEl) rateEl.value = exchangeRate;
+        const rateDisplayEl = document.getElementById('calcExchangeRateDisplay');
+        if (rateDisplayEl) {
+            rateDisplayEl.textContent = orderCurrency !== refundCurrency
+                ? `1 ${orderCurrency} = ${exchangeRate} ${refundCurrency}`
+                : `${orderCurrency} = ${refundCurrency} (同币种)`;
+        }
+        if (rateDisplayEl2) {
+            rateDisplayEl2.value = orderCurrency !== refundCurrency
+                ? `1 ${orderCurrency} = ${exchangeRate} ${refundCurrency}`
+                : `${orderCurrency} (同币种)`;
+        }
+
         const responsibility = Rules.calculateShippingResponsibility(returnItem, returnItem.qcResult);
         document.getElementById('shippingPayer').value = responsibility.shippingPayer;
 
@@ -46,32 +86,16 @@ const RefundModule = {
     },
 
     calculateRefund() {
-        const data = {
-            unitPrice: document.getElementById('refundUnitPrice').value,
-            quantity: document.getElementById('refundQty').value,
-            shippingFee: document.getElementById('refundShippingFee').value,
-            returnShipping: document.getElementById('refundReturnShipping').value,
-            taxFee: document.getElementById('refundTaxFee').value,
-            adjustAmount: document.getElementById('refundAdjust').value,
-            platformFee: document.getElementById('refundPlatformFee').value,
-            shippingPayer: document.getElementById('shippingPayer').value,
-            taxPayer: document.getElementById('taxPayer').value
-        };
+        const orderCurrency = (document.getElementById('refundOrderCurrency') || {}).value || 'USD';
+        const refundCurrency = (document.getElementById('refundRefundCurrency') || {}).value || 'USD';
+        const crossWarehouseFee = (document.getElementById('refundCrossWarehouseFee') || {}).value || 0;
+        const tariffFee = (document.getElementById('refundTariffFee') || {}).value || 0;
 
-        const result = Rules.calculateRefund(data);
-
-        document.getElementById('refundGoodsAmount').value = '$' + result.goodsRefund.toFixed(2);
-        document.getElementById('calcGoodsRefund').textContent = '$' + result.goodsRefund.toFixed(2);
-        document.getElementById('calcShippingRefund').textContent = '$' + result.shippingRefund.toFixed(2);
-        document.getElementById('calcTaxRefund').textContent = '$' + result.taxRefund.toFixed(2);
-        document.getElementById('calcTotalRefund').textContent = '$' + result.totalRefund.toFixed(2);
-    },
-
-    submitRefundCalc() {
-        const returnId = document.getElementById('refundCalcReturnId').value;
-        if (!returnId) {
-            showToast('请选择退换申请', 'error');
-            return;
+        let exchangeRate = 1;
+        if (orderCurrency !== refundCurrency) {
+            const fromRate = Models.EXCHANGE_RATES[orderCurrency] || 1;
+            const toRate = Models.EXCHANGE_RATES[refundCurrency] || 1;
+            exchangeRate = Number((toRate / fromRate).toFixed(6));
         }
 
         const data = {
@@ -83,7 +107,74 @@ const RefundModule = {
             adjustAmount: document.getElementById('refundAdjust').value,
             platformFee: document.getElementById('refundPlatformFee').value,
             shippingPayer: document.getElementById('shippingPayer').value,
-            taxPayer: document.getElementById('taxPayer').value
+            taxPayer: document.getElementById('taxPayer').value,
+            orderCurrency: orderCurrency,
+            refundCurrency: refundCurrency,
+            crossWarehouseFee: crossWarehouseFee,
+            tariffFee: tariffFee
+        };
+
+        const result = Rules.calculateRefund(data);
+
+        document.getElementById('refundGoodsAmount').value = formatCurrency(result.goodsRefund, orderCurrency);
+        document.getElementById('calcGoodsRefund').textContent = formatCurrency(result.goodsRefund, orderCurrency);
+        document.getElementById('calcShippingRefund').textContent = formatCurrency(result.shippingRefund, orderCurrency);
+        document.getElementById('calcTaxRefund').textContent = formatCurrency(result.taxRefund, orderCurrency);
+
+        const totalEl = document.getElementById('calcTotalRefund');
+        if (totalEl) totalEl.textContent = formatCurrency(result.totalRefund, orderCurrency);
+
+        const totalInRefundEl = document.getElementById('calcTotalInRefundCurrency');
+        const totalInRefundRowEl = document.getElementById('calcTotalInRefundCurrencyRow');
+        if (totalInRefundEl) {
+            totalInRefundEl.textContent = orderCurrency !== refundCurrency
+                ? formatCurrency(result.totalInRefundCurrency, refundCurrency)
+                : '';
+        }
+        if (totalInRefundRowEl) {
+            totalInRefundRowEl.style.display = (orderCurrency !== refundCurrency && result.totalInRefundCurrency) ? 'flex' : 'none';
+        }
+
+        const crossFeeDisplayEl = document.getElementById('calcCrossWarehouseFee');
+        if (crossFeeDisplayEl) crossFeeDisplayEl.textContent = formatCurrency(result.crossWarehouseFee, orderCurrency);
+
+        const tariffDisplayEl = document.getElementById('calcTariffFee');
+        if (tariffDisplayEl) tariffDisplayEl.textContent = formatCurrency(result.tariffFee, orderCurrency);
+    },
+
+    submitRefundCalc() {
+        const returnId = document.getElementById('refundCalcReturnId').value;
+        if (!returnId) {
+            showToast('请选择退换申请', 'error');
+            return;
+        }
+
+        const orderCurrency = (document.getElementById('refundOrderCurrency') || {}).value || 'USD';
+        const refundCurrency = (document.getElementById('refundRefundCurrency') || {}).value || 'USD';
+        const crossWarehouseFee = (document.getElementById('refundCrossWarehouseFee') || {}).value || 0;
+        const tariffFee = (document.getElementById('refundTariffFee') || {}).value || 0;
+
+        let exchangeRate = 1;
+        if (orderCurrency !== refundCurrency) {
+            const fromRate = Models.EXCHANGE_RATES[orderCurrency] || 1;
+            const toRate = Models.EXCHANGE_RATES[refundCurrency] || 1;
+            exchangeRate = Number((toRate / fromRate).toFixed(6));
+        }
+
+        const data = {
+            unitPrice: document.getElementById('refundUnitPrice').value,
+            quantity: document.getElementById('refundQty').value,
+            shippingFee: document.getElementById('refundShippingFee').value,
+            returnShipping: document.getElementById('refundReturnShipping').value,
+            taxFee: document.getElementById('refundTaxFee').value,
+            adjustAmount: document.getElementById('refundAdjust').value,
+            platformFee: document.getElementById('refundPlatformFee').value,
+            shippingPayer: document.getElementById('shippingPayer').value,
+            taxPayer: document.getElementById('taxPayer').value,
+            orderCurrency: orderCurrency,
+            refundCurrency: refundCurrency,
+            crossWarehouseFee: crossWarehouseFee,
+            tariffFee: tariffFee
         };
 
         const calc = Rules.calculateRefund(data);
@@ -98,7 +189,13 @@ const RefundModule = {
             platformFee: parseFloat(data.platformFee) || 0,
             shippingPayer: data.shippingPayer,
             taxPayer: data.taxPayer,
-            totalAmount: calc.totalRefund
+            totalAmount: calc.totalRefund,
+            orderCurrency: orderCurrency,
+            refundCurrency: refundCurrency,
+            exchangeRate: exchangeRate,
+            totalInRefundCurrency: calc.totalInRefundCurrency,
+            crossWarehouseFee: calc.crossWarehouseFee,
+            tariffFee: calc.tariffFee
         };
 
         const refund = Models.createRefund(refundData);
@@ -107,10 +204,16 @@ const RefundModule = {
         Storage.update(Storage.KEYS.RETURNS, returnId, {
             status: 'refund_pending',
             refundRecordId: refund.id,
-            refundInfo: refundData
+            refundInfo: refundData,
+            orderCurrency: orderCurrency,
+            refundCurrency: refundCurrency,
+            exchangeRate: exchangeRate
         });
 
-        showToast(`退款试算完成，预计退款 $${calc.totalRefund.toFixed(2)}`, 'success');
+        const totalMsg = orderCurrency !== refundCurrency
+            ? `${formatCurrency(calc.totalRefund, orderCurrency)} / ${formatCurrency(calc.totalInRefundCurrency, refundCurrency)}`
+            : formatCurrency(calc.totalRefund, orderCurrency);
+        showToast(`退款试算完成，预计退款 ${totalMsg}`, 'success');
         this.renderRefundList();
         this.refreshSelects();
         this.refreshOthers();
@@ -139,12 +242,18 @@ const RefundModule = {
                 status: 'completed'
             });
         } else {
+            const returnItem = Storage.getById(Storage.KEYS.RETURNS, returnId);
+            const orderCurrency = returnItem ? (returnItem.orderCurrency || 'USD') : 'USD';
+            const refundCurrency = returnItem ? (returnItem.refundCurrency || orderCurrency) : 'USD';
+
             const refund = Models.createRefund({
                 returnId: returnId,
                 totalAmount: parseFloat(amount) || 0,
                 channel: channel,
                 externalTxnId: externalTxnId,
-                remark: remark
+                remark: remark,
+                orderCurrency: orderCurrency,
+                refundCurrency: refundCurrency
             });
             refund.status = 'completed';
             Storage.add(Storage.KEYS.REFUNDS, refund);
@@ -176,7 +285,7 @@ const RefundModule = {
         );
 
         if (refundReturns.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="empty-state">暂无退款数据</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="empty-state">暂无退款数据</td></tr>';
             return;
         }
 
@@ -188,19 +297,38 @@ const RefundModule = {
 
         tbody.innerHTML = refundReturns.map(r => {
             const refund = refunds.find(rf => rf.returnId === r.id);
+            const refundInfo = r.refundInfo || {};
+            const orderCurrency = (refund && refund.orderCurrency) || refundInfo.orderCurrency || 'USD';
+            const refundCurrency = (refund && refund.refundCurrency) || refundInfo.refundCurrency || orderCurrency;
+
+            const goodsAmount = refund ? refund.goodsAmount : refundInfo.goodsAmount || 0;
+            const shippingFee = refund ? refund.shippingFee : refundInfo.shippingFee || 0;
+            const taxFee = refund ? refund.taxFee : refundInfo.taxFee || 0;
+            const totalAmount = refund ? refund.totalAmount : refundInfo.totalAmount || 0;
+            const crossWarehouseFee = refund ? refund.crossWarehouseFee : refundInfo.crossWarehouseFee || 0;
+            const tariffFee = refund ? refund.tariffFee : refundInfo.tariffFee || 0;
+            const totalInRefundCurrency = refund ? refund.totalInRefundCurrency : refundInfo.totalInRefundCurrency || 0;
+
             const statusBadge = r.status === 'refunded' ? 'badge-success' :
                                r.status === 'refund_pending' ? 'badge-warning' : 'badge-info';
             const statusText = r.status === 'refunded' ? '已退款' :
                                r.status === 'refund_pending' ? '待退款' : '已完成';
 
+            let refundCurrencyCol = '';
+            if (orderCurrency !== refundCurrency && totalInRefundCurrency) {
+                refundCurrencyCol = `<br><small class="text-muted">${formatCurrency(totalInRefundCurrency, refundCurrency)}</small>`;
+            }
+
             return `
                 <tr>
                     <td><strong>${r.id}</strong></td>
                     <td>${r.orderId || '-'}</td>
-                    <td>$${refund ? refund.goodsAmount.toFixed(2) : (r.refundInfo ? r.refundInfo.goodsAmount.toFixed(2) : '0.00')}</td>
-                    <td>$${refund ? refund.shippingFee.toFixed(2) : '0.00'}</td>
-                    <td>$${refund ? refund.taxFee.toFixed(2) : '0.00'}</td>
-                    <td><strong>$${refund ? refund.totalAmount.toFixed(2) : (r.refundInfo ? r.refundInfo.totalAmount.toFixed(2) : '0.00')}</strong></td>
+                    <td>${formatCurrency(goodsAmount, orderCurrency)}</td>
+                    <td>${formatCurrency(shippingFee, orderCurrency)}</td>
+                    <td>${formatCurrency(taxFee, orderCurrency)}</td>
+                    <td>${formatCurrency(crossWarehouseFee, orderCurrency)}</td>
+                    <td>${formatCurrency(tariffFee, orderCurrency)}</td>
+                    <td><strong>${formatCurrency(totalAmount, orderCurrency)}${refundCurrencyCol}</strong></td>
                     <td>${refund && refund.channel ? channelLabels[refund.channel] || refund.channel : '-'}</td>
                     <td><span class="badge ${statusBadge}">${statusText}</span></td>
                     <td>

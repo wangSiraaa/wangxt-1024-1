@@ -39,19 +39,24 @@ const CustomerService = {
     },
 
     saveOrder() {
+        const country = document.getElementById('country').value;
+        const currencyInfo = Models.CURRENCIES[country] || { code: 'USD', symbol: '$' };
+
         const data = {
             orderId: document.getElementById('orderId').value.trim(),
             buyerAccount: document.getElementById('buyerAccount').value.trim(),
-            country: document.getElementById('country').value,
+            country: country,
             orderTime: document.getElementById('orderTime').value,
             receiveTime: document.getElementById('receiveTime').value || null,
             returnDeadline: document.getElementById('returnDeadline').value,
             orderAmount: document.getElementById('orderAmount').value,
-            shippingFee: document.getElementById('shippingFee').value
+            shippingFee: document.getElementById('shippingFee').value,
+            orderCurrency: currencyInfo.code,
+            originWarehouse: document.getElementById('originWarehouse') ? document.getElementById('originWarehouse').value : 'CN_SZ'
         };
 
-        if (!data.orderId || !data.country || !data.orderTime) {
-            showToast('请填写必填项', 'error');
+        if (!data.orderId || !data.country || !data.orderTime || !data.originWarehouse) {
+            showToast('请填写必填项（订单号、国家、下单时间、发货仓库）', 'error');
             return;
         }
 
@@ -71,15 +76,25 @@ const CustomerService = {
     },
 
     saveSku() {
+        const stock = parseInt(document.getElementById('skuStock').value) || 0;
+
         const data = {
             skuCode: document.getElementById('skuCode').value.trim(),
             skuName: document.getElementById('skuName').value.trim(),
             size: document.getElementById('skuSize').value,
             color: document.getElementById('skuColor').value.trim(),
-            stock: document.getElementById('skuStock').value,
+            stock: stock,
             safeStock: document.getElementById('skuSafeStock').value,
             price: document.getElementById('skuPrice').value,
-            weight: document.getElementById('skuWeight').value
+            weight: document.getElementById('skuWeight').value,
+            warehouseStocks: {
+                'CN_SZ': stock,
+                'CN_BONDED': 0,
+                'US_LA': 0,
+                'DE_FRA': 0,
+                'JP_TYO': 0,
+                'UK_LON': 0
+            }
         };
 
         if (!data.skuCode || !data.size) {
@@ -118,6 +133,16 @@ const CustomerService = {
         const order = Storage.getById(Storage.KEYS.ORDERS, orderRef);
         const sku = Storage.getById(Storage.KEYS.SKUS, skuRef);
 
+        const originWarehouse = order ? order.originWarehouse : 'CN_SZ';
+        const targetWarehouseEl = document.getElementById('targetWarehouse');
+        const targetWarehouse = targetWarehouseEl ? targetWarehouseEl.value : originWarehouse;
+        const orderCurrency = order ? order.orderCurrency : 'USD';
+        const refundCurrencyEl = document.getElementById('refundCurrency');
+        let refundCurrency = refundCurrencyEl ? refundCurrencyEl.value : '';
+        if (!refundCurrency) {
+            refundCurrency = orderCurrency;
+        }
+
         const data = {
             orderId: order ? order.orderId : '',
             orderRef: orderRef,
@@ -129,13 +154,39 @@ const CustomerService = {
             exchangeSize: document.getElementById('exchangeSize').value || null,
             maliciousFlag: document.getElementById('maliciousFlag').value,
             applyTime: document.getElementById('applyTime').value || new Date().toISOString(),
-            remark: document.getElementById('returnRemark').value
+            remark: document.getElementById('returnRemark').value,
+            originWarehouse: originWarehouse,
+            targetWarehouse: targetWarehouse,
+            warehouseCrossType: Models.getWarehouseCrossType(originWarehouse, targetWarehouse),
+            orderCurrency: orderCurrency,
+            refundCurrency: refundCurrency,
+            exchangeRate: Models.EXCHANGE_RATES && orderCurrency && refundCurrency
+                ? Number((Models.EXCHANGE_RATES[refundCurrency] / Models.EXCHANGE_RATES[orderCurrency]).toFixed(6))
+                : 1
         };
+
+        const tariffResponsibilityEl = document.getElementById('tariffResponsibility');
+        if (tariffResponsibilityEl) {
+            data.tariffResponsibility = tariffResponsibilityEl.value;
+        } else {
+            data.tariffResponsibility = 'seller';
+        }
+
+        const tariffAmountEl = document.getElementById('tariffAmount');
+        if (tariffAmountEl) {
+            data.tariffAmount = parseFloat(tariffAmountEl.value) || 0;
+        } else {
+            data.tariffAmount = 0;
+        }
 
         const validation = Rules.validateReturnSubmission(order, data);
         if (!validation.valid) {
             showToast(validation.errors[0], 'error');
             return;
+        }
+
+        if (validation.overdueCheck && validation.overdueCheck.overdue) {
+            data.status = 'overdue_intercepted';
         }
 
         if (validation.warnings.length > 0) {
@@ -148,7 +199,9 @@ const CustomerService = {
         const deadline = Rules.getOrderDeadline(order);
         returnItem.deadlineTime = deadline ? deadline.toISOString() : null;
 
-        if (Rules.checkNeedFeedback(returnItem)) {
+        if (validation.overdueCheck && validation.overdueCheck.overdue) {
+            returnItem.status = 'overdue_intercepted';
+        } else if (Rules.checkNeedFeedback(returnItem)) {
             returnItem.status = 'pending';
         } else {
             returnItem.status = 'warehouse_pending';
@@ -171,13 +224,17 @@ const CustomerService = {
         const orders = Storage.get(Storage.KEYS.ORDERS);
 
         if (orders.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="empty-state">暂无订单数据，请先录入订单</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="empty-state">暂无订单数据，请先录入订单</td></tr>';
             return;
         }
 
         tbody.innerHTML = orders.map(order => {
             const remaining = Rules.getRemainingDays(order);
             const deadline = Rules.getOrderDeadline(order);
+            const currencyInfo = Models.CURRENCIES[order.country] || { code: 'USD', symbol: '$' };
+            const warehouseInfo = Models.WAREHOUSES[order.originWarehouse];
+            const warehouseName = warehouseInfo ? warehouseInfo.name : (order.originWarehouse || '-');
+
             let statusBadge = 'badge-success';
             let statusText = '正常';
             if (remaining < 0) {
@@ -197,7 +254,8 @@ const CustomerService = {
                     <td>${order.receiveTime ? formatDateTime(order.receiveTime) : '-'}</td>
                     <td>${order.returnDeadline}天</td>
                     <td><span class="badge ${remaining < 0 ? 'badge-danger' : 'badge-info'}">${remaining >= 0 ? remaining + '天' : '超期' + Math.abs(remaining) + '天'}</span></td>
-                    <td>$${(parseFloat(order.orderAmount) || 0).toFixed(2)}</td>
+                    <td>${formatCurrency(order.orderAmount, currencyInfo.code)}</td>
+                    <td><span class="badge badge-info">${warehouseName}</span></td>
                     <td><span class="badge ${statusBadge}">${statusText}</span></td>
                 </tr>
             `;
@@ -217,6 +275,16 @@ const CustomerService = {
         tbody.innerHTML = skus.map(sku => {
             const stock = parseInt(sku.stock) || 0;
             const safeStock = parseInt(sku.safeStock) || 0;
+            const ws = sku.warehouseStocks || {};
+            const warehouseSummary = Object.entries(ws)
+                .filter(([, v]) => parseInt(v) > 0)
+                .map(([k, v]) => {
+                    const wh = Models.WAREHOUSES[k];
+                    const label = wh ? wh.name.split('仓')[0] : k;
+                    return `${label}:${v}`;
+                })
+                .join(' ') || '无库存分配';
+
             let statusBadge = 'badge-success';
             let statusText = '正常';
             if (stock === 0) {
@@ -235,8 +303,8 @@ const CustomerService = {
                     <td>${sku.color || '-'}</td>
                     <td><strong>${stock}</strong></td>
                     <td>${safeStock}</td>
-                    <td>$${(parseFloat(sku.price) || 0).toFixed(2)}</td>
-                    <td><span class="badge ${statusBadge}">${statusText}</span></td>
+                    <td title="${warehouseSummary}">${formatCurrency(sku.price, 'USD')}</td>
+                    <td><span class="badge ${statusBadge}">${statusText}</span><br><small class="warehouse-summary">${warehouseSummary}</small></td>
                 </tr>
             `;
         }).join('');
@@ -269,16 +337,42 @@ const CustomerService = {
         tbody.innerHTML = returns.map(r => {
             const canModifyReason = Rules.canModifyReason(r);
             const reasonInfo = Models.REASON_MAP[r.reason] || { zh: r.reason };
+
+            const statusBadge = `<span class="badge ${Models.RETURN_STATUS_BADGE[r.status] || 'badge-default'}">${Models.RETURN_STATUS_LABEL[r.status] || r.status}</span>`;
+
+            const originWh = Models.WAREHOUSES[r.originWarehouse];
+            const targetWh = Models.WAREHOUSES[r.targetWarehouse];
+            const originLabel = originWh ? originWh.name.split('仓')[0] : (r.originWarehouse || '-');
+            const targetLabel = targetWh ? targetWh.name.split('仓')[0] : (r.targetWarehouse || '-');
+            const crossTypeLabel = r.warehouseCrossType ? (Models.WAREHOUSE_CROSS_TYPES[r.warehouseCrossType] || '') : '';
+            let warehouseInfo = `${originLabel}→${targetLabel}`;
+            if (crossTypeLabel && r.warehouseCrossType !== 'same') {
+                warehouseInfo += `<br><small class="cross-type">${crossTypeLabel}</small>`;
+            }
+
+            const orderCurr = r.orderCurrency || 'USD';
+            const refundCurr = r.refundCurrency || orderCurr;
+            const rateInfo = r.exchangeRate ? ` (×${r.exchangeRate})` : '';
+            const currencyInfo = orderCurr === refundCurr
+                ? `<span class="badge badge-info">${orderCurr}</span>`
+                : `<span class="badge badge-info">${orderCurr}</span>→<span class="badge badge-warning">${refundCurr}${rateInfo}</span>`;
+
+            const tariffLabel = Models.TARIFF_LABEL[r.tariffResponsibility] || r.tariffResponsibility;
+            const tariffBadge = `<span class="badge ${r.tariffResponsibility === 'seller' ? 'badge-success' : r.tariffResponsibility === 'buyer' ? 'badge-danger' : 'badge-warning'}">${tariffLabel}</span>`;
+
+            const qcMismatchIcon = r.qcMismatchTriggered ? ' ⚠️' : '';
+            const arbitrationLockIcon = r.arbitrationConclusionLocked ? ' 🔒' : '';
+
             return `
                 <tr>
                     <td><strong>${r.id}</strong></td>
                     <td>${r.orderId || '-'}</td>
                     <td>${r.skuCode || '-'}</td>
-                    <td>${Models.RETURN_TYPE_LABEL[r.returnType] || r.returnType}</td>
+                    <td>${statusBadge}${qcMismatchIcon}${arbitrationLockIcon}</td>
+                    <td>${warehouseInfo}</td>
+                    <td><span class="badge badge-info">${currencyInfo}</span></td>
+                    <td>${tariffBadge}</td>
                     <td>${reasonInfo.zh}${r.reasonLocked ? ' 🔒' : ''}</td>
-                    <td>${r.quantity}</td>
-                    <td><span class="badge ${Models.MALICIOUS_BADGE[r.maliciousFlag]}">${Models.MALICIOUS_LABEL[r.maliciousFlag]}</span></td>
-                    <td><span class="badge ${Models.RETURN_STATUS_BADGE[r.status]}">${Models.RETURN_STATUS_LABEL[r.status]}</span></td>
                     <td>${r.deadlineTime ? formatDateTime(r.deadlineTime) : '-'}</td>
                     <td>
                         <span class="action-link ${canModifyReason ? '' : 'disabled'}"
@@ -301,10 +395,6 @@ const CustomerService = {
             showToast(check.reason, 'error');
             return;
         }
-
-        const reasonOptions = Object.entries(Models.REASON_MAP).map(([code, info]) =>
-            `<option value="${code}" ${code === returnItem.reason ? 'selected' : ''}>${info.zh}</option>`
-        ).join('');
 
         const newReason = prompt(`请选择新的退换原因：\n\n(输入对应编号：\n${Object.entries(Models.REASON_MAP).map(([c, i]) => `${c} - ${i.zh}`).join('\n')})`, returnItem.reason);
 
@@ -337,6 +427,47 @@ const CustomerService = {
                 el.value = current;
             }
         });
+
+        const returnOrderEl = document.getElementById('returnOrderId');
+        if (returnOrderEl) {
+            returnOrderEl.removeEventListener('change', this._onReturnOrderChange);
+            this._onReturnOrderChange = () => {
+                const orderId = returnOrderEl.value;
+                const order = Storage.getById(Storage.KEYS.ORDERS, orderId);
+                const targetWhEl = document.getElementById('targetWarehouse');
+                if (order && targetWhEl) {
+                    const originWh = order.originWarehouse || 'CN_SZ';
+                    targetWhEl.value = '';
+                }
+                const currencyInfo = order && Models.CURRENCIES[order.country]
+                    ? Models.CURRENCIES[order.country]
+                    : { code: 'USD', name: '美元', symbol: '$' };
+                const orderCurrencyDisplayEl = document.getElementById('orderCurrencyDisplay');
+                if (orderCurrencyDisplayEl && order) {
+                    orderCurrencyDisplayEl.value = `${currencyInfo.code} (${currencyInfo.name} ${currencyInfo.symbol})`;
+                } else if (orderCurrencyDisplayEl) {
+                    orderCurrencyDisplayEl.value = '';
+                }
+                const refundCurrencyEl = document.getElementById('refundCurrency');
+                if (refundCurrencyEl && order) {
+                    if (!refundCurrencyEl.value || refundCurrencyEl.dataset.touched !== 'true') {
+                        refundCurrencyEl.value = currencyInfo.code;
+                    }
+                }
+                const tariffAmountEl = document.getElementById('tariffAmount');
+                if (tariffAmountEl && !tariffAmountEl.value) {
+                    tariffAmountEl.value = '0';
+                }
+            };
+            returnOrderEl.addEventListener('change', this._onReturnOrderChange);
+        }
+
+        const refundCurrencyEl = document.getElementById('refundCurrency');
+        if (refundCurrencyEl) {
+            refundCurrencyEl.addEventListener('change', () => {
+                refundCurrencyEl.dataset.touched = 'true';
+            });
+        }
     },
 
     refreshSkuSelects() {

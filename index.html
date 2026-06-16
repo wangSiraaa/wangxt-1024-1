@@ -82,6 +82,19 @@
                                     <label>运费(USD)</label>
                                     <input type="number" id="shippingFee" step="0.01" min="0" value="0">
                                 </div>
+                                <div class="form-item">
+                                    <label>发货仓库 *</label>
+                                    <select id="originWarehouse" required>
+                                        <option value="">请选择</option>
+                                        <option value="CN_SZ">中国深圳仓(国内仓)</option>
+                                        <option value="CN_GZ">中国广州仓(保税仓)</option>
+                                        <option value="CN_BONDED">中国保税仓</option>
+                                        <option value="US_LA">美国洛杉矶仓</option>
+                                        <option value="DE_FRA">德国法兰克福仓</option>
+                                        <option value="JP_TYO">日本东京仓</option>
+                                        <option value="UK_LON">英国伦敦仓</option>
+                                    </select>
+                                </div>
                             </div>
                             <button type="submit" class="btn btn-primary">保存订单</button>
                         </form>
@@ -100,6 +113,7 @@
                                     <th>售后期限</th>
                                     <th>剩余天数</th>
                                     <th>金额</th>
+                                    <th>仓库</th>
                                     <th>状态</th>
                                 </tr>
                             </thead>
@@ -256,6 +270,49 @@
                                     <label>申请时间</label>
                                     <input type="datetime-local" id="applyTime">
                                 </div>
+                                <div class="form-item">
+                                    <label>退货目标仓库</label>
+                                    <select id="targetWarehouse">
+                                        <option value="">同原仓库</option>
+                                        <option value="CN_SZ">中国深圳仓(国内仓)</option>
+                                        <option value="CN_GZ">中国广州仓(保税仓)</option>
+                                        <option value="CN_BONDED">中国保税仓</option>
+                                        <option value="US_LA">美国洛杉矶仓</option>
+                                        <option value="DE_FRA">德国法兰克福仓</option>
+                                        <option value="JP_TYO">日本东京仓</option>
+                                        <option value="UK_LON">英国伦敦仓</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>关税责任方</label>
+                                    <select id="tariffResponsibility">
+                                        <option value="seller">卖家承担</option>
+                                        <option value="buyer">买家承担</option>
+                                        <option value="split">双方分担</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>关税金额(USD)</label>
+                                    <input type="number" id="tariffAmount" step="0.01" min="0" value="0">
+                                </div>
+                                <div class="form-item">
+                                    <label>订单币种</label>
+                                    <input type="text" id="orderCurrencyDisplay" readonly placeholder="(选订单后自动)">
+                                </div>
+                                <div class="form-item">
+                                    <label>退款币种</label>
+                                    <select id="refundCurrency">
+                                        <option value="">(默认同订单币种)</option>
+                                        <option value="USD">USD 美元 ($)</option>
+                                        <option value="EUR">EUR 欧元 (€)</option>
+                                        <option value="GBP">GBP 英镑 (£)</option>
+                                        <option value="JPY">JPY 日元 (¥)</option>
+                                        <option value="CNY">CNY 人民币 (¥)</option>
+                                        <option value="AUD">AUD 澳元 (A$)</option>
+                                        <option value="CAD">CAD 加元 (C$)</option>
+                                        <option value="SGD">SGD 新币 (S$)</option>
+                                    </select>
+                                </div>
                             </div>
                             <div class="form-item full-width">
                                 <label>备注说明</label>
@@ -280,10 +337,13 @@
                                 <option value="qc_pending">待质检</option>
                                 <option value="qc_pass">质检通过</option>
                                 <option value="qc_reject">质检不通过</option>
+                                <option value="qc_mismatch_recheck">质检复核(不一致)</option>
                                 <option value="exchange_locked">换货已锁库</option>
                                 <option value="refund_pending">待退款</option>
                                 <option value="refunded">已退款</option>
                                 <option value="arbitration">争议仲裁中</option>
+                                <option value="arbitration_locked">仲裁结论已锁定</option>
+                                <option value="overdue_intercepted">超期拦截</option>
                                 <option value="completed">已完成</option>
                                 <option value="rejected">已驳回</option>
                                 <option value="returned">已退回</option>
@@ -297,11 +357,11 @@
                                     <th>申请编号</th>
                                     <th>订单号</th>
                                     <th>SKU</th>
-                                    <th>类型</th>
-                                    <th>原因</th>
-                                    <th>数量</th>
-                                    <th>恶意标记</th>
                                     <th>状态</th>
+                                    <th>仓库信息</th>
+                                    <th>币种</th>
+                                    <th>关税</th>
+                                    <th>原因</th>
                                     <th>截止时间</th>
                                     <th>操作</th>
                                 </tr>
@@ -321,6 +381,7 @@
                     <button class="sub-tab-btn active" data-subtab="buyer-feedback">试穿反馈</button>
                     <button class="sub-tab-btn" data-subtab="buyer-reason">多语言原因</button>
                     <button class="sub-tab-btn" data-subtab="buyer-logistics">物流轨迹</button>
+                    <button class="sub-tab-btn" data-subtab="buyer-combined">综合视图</button>
                     <button class="sub-tab-btn" data-subtab="buyer-pending">待反馈列表</button>
                 </div>
 
@@ -481,6 +542,21 @@
                     </div>
                 </div>
 
+                <div id="subtab-buyer-combined" class="sub-tab-content">
+                    <div class="form-card">
+                        <h3>📋 综合视图 - 试穿反馈/物流/仓库/关税联动</h3>
+                        <div class="form-item" style="margin-bottom:16px">
+                            <label>选择退换申请</label>
+                            <select id="combinedViewReturnId" onchange="BuyerModule.renderCombinedView()">
+                                <option value="">请选择申请</option>
+                            </select>
+                        </div>
+                        <div id="combinedViewPanel" class="combined-view-panel">
+                            <div class="empty-state">请选择退换申请查看综合信息</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="subtab-buyer-pending" class="sub-tab-content">
                     <div class="data-card">
                         <h3>待买家反馈列表</h3>
@@ -531,9 +607,11 @@
                                     <select id="warehouseCode">
                                         <option value="CN_SZ">中国深圳仓</option>
                                         <option value="CN_GZ">中国广州仓</option>
+                                        <option value="CN_BONDED">中国保税仓</option>
                                         <option value="US_LA">美国洛杉矶仓</option>
                                         <option value="DE_FRA">德国法兰克福仓</option>
                                         <option value="JP_TYO">日本东京仓</option>
+                                        <option value="UK_LON">英国伦敦仓</option>
                                     </select>
                                 </div>
                                 <div class="form-item">
@@ -560,6 +638,18 @@
                                         <option value="item_diff">商品差异</option>
                                         <option value="missing">缺少配件</option>
                                     </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>穿着磨损状况</label>
+                                    <select id="inboundWearCondition">
+                                        <option value="none">无穿着痕迹</option>
+                                        <option value="slight">轻微穿着</option>
+                                        <option value="serious">严重穿着/磨损</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>尺码匹配原因</label>
+                                    <input type="text" id="inboundSizeMatchReason" placeholder="如与申请不一致请说明原因">
                                 </div>
                             </div>
                             <div class="form-item full-width">
@@ -674,10 +764,24 @@
                                     <input type="number" id="lockQty" min="1" value="1" required>
                                 </div>
                                 <div class="form-item">
+                                    <label>换货发货仓库</label>
+                                    <select id="exchangeTargetWarehouse">
+                                        <option value="">同原仓库</option>
+                                        <option value="CN_SZ">中国深圳仓(国内仓)</option>
+                                        <option value="CN_GZ">中国广州仓(保税仓)</option>
+                                        <option value="CN_BONDED">中国保税仓</option>
+                                        <option value="US_LA">美国洛杉矶仓</option>
+                                        <option value="DE_FRA">德国法兰克福仓</option>
+                                        <option value="JP_TYO">日本东京仓</option>
+                                        <option value="UK_LON">英国伦敦仓</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
                                     <label>预计发货时间</label>
                                     <input type="date" id="expectedShipDate">
                                 </div>
                             </div>
+                            <div class="cross-warehouse-indicator" id="crossWarehouseIndicator" style="display:none;"></div>
                             <div class="stock-warning" id="stockWarning" style="display:none;">
                                 ❌ 库存不足，无法锁库！
                             </div>
@@ -788,6 +892,23 @@
                                     <label>平台手续费(USD)</label>
                                     <input type="number" id="refundPlatformFee" step="0.01" min="0" value="0" onchange="calculateRefund()">
                                 </div>
+                                <input type="hidden" id="refundOrderCurrency" value="USD">
+                                <input type="hidden" id="refundRefundCurrency" value="USD">
+                                <input type="hidden" id="refundCrossWarehouseFee" value="0">
+                                <input type="hidden" id="refundTariffFee" value="0">
+                                <input type="hidden" id="refundExchangeRate" value="1">
+                                <div class="form-item">
+                                    <label>订单币种</label>
+                                    <input type="text" id="refundOrderCurrencyDisplay" readonly>
+                                </div>
+                                <div class="form-item">
+                                    <label>退款币种</label>
+                                    <input type="text" id="refundRefundCurrencyDisplay" readonly>
+                                </div>
+                                <div class="form-item">
+                                    <label>汇率</label>
+                                    <input type="text" id="refundExchangeRateDisplay" readonly>
+                                </div>
                             </div>
                             <div class="calc-result-box">
                                 <div class="calc-row">
@@ -802,9 +923,25 @@
                                     <span>关税退款：</span>
                                     <span id="calcTaxRefund">$0.00</span>
                                 </div>
+                                <div class="calc-row">
+                                    <span>跨仓运费：</span>
+                                    <span id="calcCrossWarehouseFee">$0.00</span>
+                                </div>
+                                <div class="calc-row">
+                                    <span>关税费用：</span>
+                                    <span id="calcTariffFee">$0.00</span>
+                                </div>
+                                <div class="calc-row">
+                                    <span>汇率：</span>
+                                    <span id="calcExchangeRateDisplay">USD = USD (同币种)</span>
+                                </div>
                                 <div class="calc-row highlight">
                                     <span>预计退款总额：</span>
                                     <span id="calcTotalRefund">$0.00</span>
+                                </div>
+                                <div class="calc-row" id="calcTotalInRefundCurrencyRow" style="display:none;">
+                                    <span>退款币种折算：</span>
+                                    <span id="calcTotalInRefundCurrency"></span>
                                 </div>
                             </div>
                             <button type="button" class="btn btn-default" onclick="calculateRefund()">重新计算</button>
@@ -1027,6 +1164,60 @@
                             <button type="submit" class="btn btn-primary" id="arbSubmitBtn">提交仲裁结论</button>
                         </form>
                     </div>
+
+                    <div class="form-card">
+                        <h3>证据补充（仲裁锁结论后仅可补证据）</h3>
+                        <form id="evidenceForm">
+                            <div class="form-grid">
+                                <div class="form-item">
+                                    <label>仲裁案件 *</label>
+                                    <select id="evidenceReturnId" required>
+                                        <option value="">请选择案件</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>证据类型</label>
+                                    <select id="evidenceType">
+                                        <option value="photo">照片/截图</option>
+                                        <option value="logistics">物流证明</option>
+                                        <option value="qc_report">质检报告</option>
+                                        <option value="chat_record">聊天记录</option>
+                                        <option value="other">其他</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>提交人角色</label>
+                                    <select id="evidenceSubmitterRole">
+                                        <option value="cs">客服</option>
+                                        <option value="warehouse">仓库</option>
+                                        <option value="supervisor">主管</option>
+                                        <option value="arbitrator">仲裁员</option>
+                                    </select>
+                                </div>
+                                <div class="form-item">
+                                    <label>提交人</label>
+                                    <input type="text" id="evidenceSubmitter" placeholder="姓名/工号">
+                                </div>
+                            </div>
+                            <div class="form-item full-width">
+                                <label>证据说明 *</label>
+                                <textarea id="evidenceDesc" rows="2" placeholder="请描述证据内容..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-default">提交证据</button>
+                        </form>
+                        <table class="data-table" style="margin-top:16px">
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>提交人</th>
+                                    <th>角色</th>
+                                    <th>类型</th>
+                                    <th>说明</th>
+                                </tr>
+                            </thead>
+                            <tbody id="evidenceList"></tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <div id="subtab-arb-malicious" class="sub-tab-content">
@@ -1142,9 +1333,11 @@
                         <div class="demo-buttons">
                             <button class="btn btn-demo" onclick="demoScenarioOverdue()">📅 场景1：超期拦截演示</button>
                             <button class="btn btn-demo" onclick="demoScenarioNoFeedback()">👕 场景2：无试穿反馈退回</button>
-                            <button class="btn btn-demo" onclick="demoScenarioReasonLocked()">🔒 场景3：入库后原因锁定</button>
-                            <button class="btn btn-demo" onclick="demoScenarioStockShortage()">📦 场景4：换货库存不足</button>
-                            <button class="btn btn-demo" onclick="demoScenarioArbitration()">⚖️ 场景5：仲裁权限验证</button>
+                            <button class="btn btn-demo" onclick="demoScenarioCrossWarehouseLock()">🔄 场景3：跨仓换货库存锁定</button>
+                            <button class="btn btn-demo" onclick="demoScenarioArbitrationLocked()">🔒 场景4：仲裁锁结论验证</button>
+                            <button class="btn btn-demo" onclick="demoScenarioReasonLocked()">� 场景5：入库后原因锁定</button>
+                            <button class="btn btn-demo" onclick="demoScenarioStockShortage()">📦 场景6：换货库存不足</button>
+                            <button class="btn btn-demo" onclick="demoScenarioArbitration()">⚖️ 场景7：仲裁权限验证</button>
                             <button class="btn btn-demo btn-primary" onclick="initAllDemoData()">🚀 一键初始化全部演示数据</button>
                             <button class="btn btn-danger" onclick="clearAllData()">🗑️ 清空所有数据</button>
                         </div>
